@@ -1,47 +1,142 @@
 /// <reference types="cypress" />
 
+let token
+
+beforeEach(() => {
+
+     cy.geraToken('admin@biblioteca.com', 'admin123').then(tkn => {
+          token = tkn
+     })
+
+})
+
 describe('Testes da Funcionalidade Catálogo de Livros', () => {
 
-let token
-beforeEach(() => {
-    cy.geraToken('admin@biblioteca.com', 'admin123').then(tkn => {
-        token = tkn
-    })
-});
+     it('GET - Deve listar livros com filtros e paginação', () => {
 
-    // Objetivo: Verificar que a API retorna lista de livros com paginação e filtros funcionando
-    // Validar que filtros por categoria e autores funcionam corretamente
-    it('GET - Deve listar livros com filtros e paginação', () => {
-         //TODO: 
-    });
+          cy.listarLivrosComFiltros({
+               category: "Literatura Brasileira",
+               author: "Machado de Assis",
+               limit: 20,
+               offset: 0
+          }).then((response) => {
 
-    // Objetivo: Validar que é possível obter detalhes de um livro específico pelo ID
-    // Verificar que todos os campos do livro são retornados corretamente
-    it('GET - Deve obter detalhes de um livro específico', () => {
-         //TODO: 
-    });
+               expect(response.status).to.equal(200)
 
-    // Objetivo: Validar que um novo livro é adicionado com sucesso ao catálogo
-    // Verificar que apenas admin pode adicionar novos livros (validação de permissão)
-    it('POST - Deve cadastrar um novo livro com sucesso', () => {
-         //TODO: 
-    });
+          })
 
-    // Objetivo: Garantir que dados inválidos são rejeitados ao adicionar um livro
-    // Validar mensagens de erro apropriadas para dados faltantes ou incorretos
-    it('POST -  Deve rejeitar livro com dados inválidos', () => {
-         //TODO: 
-    });
+     })
 
-    // Objetivo: Validar que um livro pode ser atualizado com sucesso
-    // Verificar que apenas admin pode atualizar livros (validação de permissão)
-    it('PUT - Deve atualizar um livro previamente cadastrado', () => {
-         //TODO: 
-    });
 
-    // Objetivo: Validar que um livro pode ser removido do catálogo
-    // Verificar que apenas admin pode deletar livros (validação de permissão)
-    it('DELETE - Deve deletar um livro previamente cadastrado', () => {
-        //TODO: 
-    });
-});
+     it('GET - Deve obter detalhes de um livro específico', () => {
+
+          cy.buscarLivroPorId(5).then((response) => {
+
+               expect(response.status).to.equal(200)
+               expect(response.body.book).to.have.property('id')
+               expect(response.body.book).to.have.property('title')
+               expect(response.body.book).to.have.property('author')
+               expect(response.body.book).to.have.property('category')
+
+          })
+
+     })
+
+     it('POST - Deve rejeitar livro com dados inválidos', () => {
+
+          const livro = {
+               title: "",
+               author: "Aluísio Azevedo",
+               description: "Romance naturalista",
+               category: "Literatura Brasileira",
+               isbn: `${Date.now()}`,
+               editor: "Editora Ática",
+               language: "Português",
+               publication_year: 1890,
+               pages: 312,
+               format: "Físico",
+               total_copies: 4,
+               available_copies: 4
+          }
+
+          cy.cadastrarLivro(token, livro).then((response) => {
+
+               expect(response.status).to.equal(400)
+               expect(response.body.message).to.equal('"title" is not allowed to be empty')
+               expect(response.body.field).to.equal('title')
+
+          })
+
+     })
+
+     it('PUT - Deve atualizar um livro previamente cadastrado', () => {
+
+          const livro = {
+               title: "Livro para atualizar",
+               author: "Autor Teste",
+               description: "Descrição inicial",
+               category: "Literatura Brasileira",
+               isbn: `${Date.now()}`,
+               editor: "Editora Teste",
+               language: "Português",
+               publication_year: 2020,
+               pages: 200,
+               format: "Físico",
+               total_copies: 4,
+               available_copies: 4
+          }
+
+          cy.cadastrarLivro(token, livro).then((response) => {
+
+               const idLivro = response.body.book.id
+
+               const livroAtualizado = {
+                    ...livro,
+                    title: "Livro Atualizado",
+                    description: "Descrição atualizada"
+               }
+
+               cy.atualizarLivro(token, idLivro, livroAtualizado)
+                    .then((response) => {
+
+                         expect(response.status).to.equal(200)
+
+                    })
+
+          })
+
+     })
+
+
+     it('DELETE - Deve deletar um livro previamente cadastrado', () => {
+
+          const livro = {
+               title: "Livro para deletar",
+               author: "Autor Teste",
+               description: "Livro criado para teste de exclusão",
+               category: "Literatura Brasileira",
+               isbn: `${Date.now()}`,
+               editor: "Editora Teste",
+               language: "Português",
+               publication_year: 2020,
+               pages: 200,
+               format: "Físico",
+               total_copies: 4,
+               available_copies: 4
+          }
+
+          cy.cadastrarLivro(token, livro).then((response) => {
+
+               const idLivro = response.body.book.id
+
+               cy.deletarLivro(token, idLivro).then((response) => {
+
+                    expect(response.status).to.equal(200)
+
+               })
+
+          })
+
+     })
+
+})

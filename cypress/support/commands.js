@@ -25,30 +25,137 @@
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 
 Cypress.Commands.add('geraToken', (email, senha) => {
+
     cy.request({
-        method: 'POST', 
-        url: 'login', 
+        method: 'POST',
+        url: 'login',
         body: {
             email: email,
             password: senha
         }
-    }).then((response) => {
-       expect(response.status).to.equal(200) 
-       return response.body.token
-    })
- })
 
- Cypress.Commands.add('cadastrarUsuario', (nome, email, senha) =>{
+    }).then((response) => {
+
+        expect(response.status).to.equal(200)
+        return response.body.token
+
+    })
+
+})
+
+
+Cypress.Commands.add('cadastrarUsuario', (nome, email, senha) => {
+
+    cy.api({
+        method: 'POST',
+        url: 'users',
+        body: {
+            "name": nome,
+            "email": email,
+            "password": senha
+        }
+
+    }).then(response => {
+
+        expect(response.status).to.equal(201)
+        return response.body.user.id
+
+    })
+
+})
+
+Cypress.Commands.add('listarLivrosComFiltros',
+    ({ category, author, limit, offset }) => {
+
         cy.api({
-            method: 'POST',
-            url: 'users',
-            body: {
-                "name": nome,
-                "email": email,
-                "password": senha
+            method: 'GET',
+            url: 'books',
+            qs: {
+                category: category,
+                author: author,
+                limit: limit,
+                offset: offset
             }
-        }).then(response => {
-            expect(response.status).to.equal(201)
-            return response.body.user.id
+        }).then((response) => {
+
+            expect(response.status).to.equal(200)
+            return response
+
         })
- })
+
+    }
+)
+
+
+Cypress.Commands.add('cadastrarLivro', (token, livro) => {
+
+    cy.api({
+        method: 'POST',
+        url: 'books',
+        headers: {
+            'Authorization': token
+        },
+        body: livro,
+        failOnStatusCode: false
+
+    }).then((response) => {
+
+        return response
+
+    })
+
+})
+
+
+Cypress.Commands.add('buscarLivroPorId', (id) => {
+
+    cy.api({
+        method: 'GET',
+        url: `books/${id}`
+
+    }).then(response => {
+
+        expect(response.status).to.equal(200)
+        return response
+
+    })
+
+})
+
+
+Cypress.Commands.add('atualizarLivro', (token, id, livro) => {
+
+    cy.api({
+        method: 'PUT',
+        url: `books/${id}`,
+        headers: {
+            'Authorization': token
+        },
+        body: livro
+
+    }).then((response) => {
+
+        return response
+
+    })
+
+})
+
+
+Cypress.Commands.add('deletarLivro', (token, id) => {
+
+    cy.api({
+        method: 'DELETE',
+        url: `books/${id}`,
+        headers: {
+            'Authorization': token
+        }
+
+    }).then((response) => {
+
+        return response
+
+    })
+
+})
+
